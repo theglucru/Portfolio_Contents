@@ -9,9 +9,10 @@ library(tidyverse)
 library(knitr)
 library(lubridate)
 library(modelr)
+library(readxl)
 ```
 
-```{r, raw_data, include = FALSE}
+```{r, raw_data, include = FALSE, cache = TRUE}
 covid_index_counties <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
 covid_index_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
 covid_index_us <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us.csv")
@@ -62,7 +63,7 @@ Definition of probable:
 
 ## Looking at MA:
 
-```{r ma_index, echo=FALSE, cache = TRUE, dependson="raw_data"}
+```{r ma_index, echo=FALSE, cache = TRUE, dependson = "raw_data"}
 ma <- covid_index_counties %>% 
         filter(state == "Massachusetts" & county != "Unknown") %>% 
           select(date, county, cases, deaths) %>% 
@@ -143,8 +144,9 @@ ma_plot
 ### Here I split the number of cases to each county
 
 ```{r, echo = FALSE}
-ma %>% 
-  filter(date == today) %>% 
+ma_county <- ma %>% 
+              filter(date == today)
+ma_county %>%
   kable(caption = "Number of cases split by county")
 
 tail(unknown_county, 1) %>% kable()
@@ -165,12 +167,12 @@ ggplot(data = ma, aes(x = date, y = delta_cases, color = county))+
 ```
 
 
+## Examples where this declining count happens
 ```{r, echo = FALSE}
 ma %>% 
   filter(lag(delta_cases) > 0 & delta_cases < 0) %>% 
   kable()
 ```
-Examples where this declining count happens
 
 
 ## Checking if this error happens in any other dataset
@@ -228,19 +230,19 @@ summarise(ma2, avg_new_cases = mean(delta_cases), avg_new_deaths = mean(delta_de
 ## Other breakdown using the states dataset
 
 ```{r, echo = FALSE}
-ma <- covid_index_states %>% 
-            filter(state == "Massachusetts") %>%
-            mutate(delta_cases = coalesce(cases - lag(cases, 1))) %>% 
-            select(date, cases, deaths, delta_cases)
+# ma <- covid_index_states %>% 
+#             filter(state == "Massachusetts") %>%
+#             mutate(delta_cases = coalesce(cases - lag(cases, 1))) %>% 
+#             select(date, cases, deaths, delta_cases)
 
-ma2 <- ma %>% 
-        filter(delta_cases >= 0 & date != "2020-11-26") %>% 
-          mutate(month = month(date, label = TRUE),
+ma3 <-  ma2 %>% 
+         filter(delta_cases >= 0 & date != "2020-11-26") %>% 
+           mutate(month = month(date, label = TRUE),
                  wday = wday(date, label = TRUE))
 ```
 
 ```{r, echo = FALSE}
-ma2 %>%
+ma3 %>%
   group_by(month) %>% 
   summarise("new_cases_month" = mean(delta_cases)) %>% 
   ggplot(aes(x = month, y = new_cases_month))+
@@ -254,7 +256,7 @@ Lowest point in the summer, with a sharp spike towards the winter
 
 # Looking to see any particular trends in days of the week: 
 ```{r, r, echo = FALSE, cache = TRUE, dependson="raw_data"}
-ma2 %>%
+ma3 %>%
   group_by(wday) %>% 
   summarise("new_cases_wday" = mean(delta_cases)) %>% 
   ggplot(aes(x = wday, y = new_cases_wday))+
@@ -262,8 +264,6 @@ ma2 %>%
   labs(title = "Average num of new cases per weekday",
        y = "Cases")
 ```
-
-Monday seems to have the least number of reported cases but it gradually increases as we approach the weekend.
 
 ## Comparing the state to the country
 
@@ -283,3 +283,30 @@ plot <- ggplot(data = combined, aes(x = date))+
 
 plot+theme(legend.title = element_blank())
 ```
+
+## Looking for correlations
+```{r}
+population <-  c(212990, 124994, 565217, 17332, 789034, 70180, 466372, 160830, 1611699, 11399, 706775, 521202, 803907, 830622)
+income <- c(74336, 59230, 69095, 71811, 79263, 60950, 55429, 70876, 102603, 107717, 103291, 89489, 69669, 74679)
+ma_county$population = population
+ma_county$median_income = income
+
+cor_graph <- ggplot(data = ma_county,
+                    aes(x = population, y = cases))+
+                    geom_point()+
+                    geom_smooth(se = FALSE)+
+                    labs(title = "Population vs Cases",
+                         caption = "Information from 2015-2019 Census")
+
+cor_graph2 <- ggplot(data = ma_county,
+                    aes(x = median_income, y = cases))+
+                    geom_point()+
+                    geom_smooth(se = FALSE)+
+                    labs(title = "Median Income vs Cases",
+                         caption = "Information from 2015-2019 Census")
+
+cor_graph
+cor_graph2
+```
+
+Correlation between population and cases but not income and cases
