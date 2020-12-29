@@ -1,0 +1,312 @@
+---
+title: "Looking at the NY Times public dataset for Covid-19 cases"
+author: "Gary Lu"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(modelr)
+library(readxl)
+```
+
+```{r, raw_data, include = FALSE, cache = TRUE}
+covid_index_counties <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv")
+covid_index_states <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv")
+covid_index_us <- read_csv("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us.csv")
+today <- tail(covid_index_states,1)$date # Setting "today" to the latest date
+```
+
+## Reporting information on data from NYTimes public dataset 
+
+All data was retrieved from <https://github.com/nytimes/covid-19-data>
+
+It includes the datasets:
+
+<https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv>
+
+<https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv>
+
+<https://raw.githubusercontent.com/nytimes/covid-19-data/master/us.csv>
+
+## Most recent data reported
+
+```{r us_index, echo = FALSE}
+kable(tail(covid_index_us))
+```
+
+
+## From the public github:
+
+*May 7, 2020*
+
+*At the beginning of the Covid-19 epidemic in the United States, most health departments and the Centers for Disease Control only considered a case to be “confirmed” as Covid-19 with a positive confirmatory laboratory test result for SARS-CoV-2 RNA. Recently, however, more and more states and localities have started to include “probable” cases and/or deaths in their counts — in some places reporting only a combined “confirmed” and “probable” total.*
+
+*Because of these developments, we have changed our Covid-19 dataset to start including “probable” Covid-19 cases and deaths when they are available. It is no longer possible to report a comprehensive “confirmed-only” dataset.*
+
+*This change could cause discontinuities in the data when a locality begins to report “probable” cases and deaths. We are working to acquire the historical data from those places if and when they make it available to continually improve the quality of the dataset.*
+
+Definition of probable:
+
+*On April 5, the Council of State and Territorial Epidemiologists issued a recommendation that states include both confirmed cases, based on laboratory testing, and probable cases, based on specific criteria for symptoms and exposure. The C.D.C. adopted these definitions and began reporting probable cases on April 14 when New York City announced an additional 3,700 deaths presumed to have been caused by Covid-19.*
+
+*The new criteria define a “probable” Covid-19 case or death based on a combination of evidence from clinical, epidemiologic or serological testing, or from vital records, but without a confirmatory laboratory RNA test.*
+
+*In some instances, we report data from multiple counties or other non-county geographies as a single county. For instance, we report a single value for New York City, comprising the cases for New York, Kings, Queens, Bronx and Richmond Counties. In these instances the FIPS code field will be empty. (We may assign FIPS codes to these geographies in the future.) See the list of geographic exceptions.*
+
+*Cities like St. Louis and Baltimore that are administered separately from an adjacent county of the same name are counted separately.*
+
+*In some cases, the number of cases or deaths for a state or county will decline. This can occur when a state or county corrects an error in the number of cases or deaths they've reported in the past, or when a state moves cases from one county to another. When we are able, we will historically revise counts for all impacted dates. In other cases, this will be reflected in a single-day drop in the number of cases or deaths.*
+
+
+## Looking at MA:
+
+```{r ma_index, echo=FALSE, cache = TRUE, dependson = "raw_data"}
+ma <- covid_index_counties %>% 
+        filter(state == "Massachusetts" & county != "Unknown") %>% 
+          select(date, county, cases, deaths) %>% 
+          group_by(county) %>% 
+        mutate(delta_cases = 
+                 coalesce(cases - lag(order_by = county, cases), 0)) %>% 
+        mutate(delta_deaths = 
+                 coalesce(deaths - lag(order_by = county, deaths), 0))
+
+ma_state <- covid_index_states %>% filter(state == "Massachusetts") %>% 
+  mutate(
+          delta_cases = 
+            coalesce(cases - lag(cases), 0),
+          delta_deaths =
+            coalesce(deaths - lag(deaths), 0),
+          avg_cases =
+            cummean(delta_cases),
+          avg_deaths =
+            cummean(delta_deaths)
+  ) %>% 
+  filter(delta_cases >= 0 & date != "2020-11-26" & delta_deaths >= 0)
+```
+
+```{r Unknown_county, echo = FALSE, cache = TRUE, dependson="raw_data"}
+unknown_county <- covid_index_counties %>% 
+                  filter(state == "Massachusetts" & county == "Unknown")
+```
+
+```{r, echo = FALSE, cache = TRUE, dependson="raw_data"}
+ma_totals <- covid_index_states %>%
+                    filter(state == "Massachusetts") %>% 
+                      select(date, cases, deaths) %>% 
+                          mutate(delta_cases = 
+                           coalesce(cases - lag(cases), 0)) %>% 
+                          mutate(delta_deaths = 
+                           coalesce(deaths - lag(deaths), 0))
+
+us_totals <- covid_index_us %>% 
+               mutate(delta_cases = 
+                  coalesce(cases - lag(cases), 0)) %>% 
+               mutate(delta_deaths = 
+                 coalesce(deaths - lag(deaths), 0))
+
+tail(ma_totals) %>% kable(caption = "MA total cases")
+tail(us_totals) %>% kable(caption = "US total cases")
+```
+
+```{r, echo = FALSE, cache = TRUE, dependson="raw_data"}
+ma_today <- ma_totals %>% filter(date == today)
+us_today <- us_totals %>% filter(date == today)
+
+ma_prop_cases <- (ma_today$cases / us_today$cases * 100) %>% round(digits = 3)
+ma_prop_deaths <- (ma_today$deaths / us_today$deaths * 100) %>% round(digits = 3)
+list(ma_prop_cases, ma_prop_deaths) %>% kable(caption = "Percentage of MA COVID-19 cases to US")
+```
+
+
+```{r, printing_results, echo = FALSE, results = "asis"}
+str_c("MA accounts for ", ma_prop_cases, " %", " of total reported US Covid Cases and ",
+        ma_prop_deaths, " %", " of total reported US Covid related deaths")
+```
+
+```{r, state_graph, echo = FALSE}
+ma_plot <- ggplot(data = ma_state, aes(x = date))+
+            #geom_line(aes(y = cases, color = "Number of cases"))+
+            geom_line(aes(y = delta_cases, color = "New cases"))+
+            geom_line(aes(y = delta_deaths, color = "New Deaths"))+
+            geom_line(aes(y = avg_cases, color = "Avg num of new cases"))+
+            geom_line(aes(y = avg_deaths, color = "Avg num of new deaths"))+
+            scale_x_date(date_breaks = "1 month", date_labels = "%b")+
+            labs(title = "Current trend of COVID19 cases in MA",
+                 x = "",
+                 caption = "Removed negative deltas and holidays")
+
+ma_plot
+```
+
+### Here I split the number of cases to each county
+
+```{r, echo = FALSE}
+ma_county <- ma %>% 
+              filter(date == today)
+ma_county %>%
+  kable(caption = "Number of cases split by county")
+
+tail(unknown_county, 1) %>% kable()
+```
+
+Most recent data for all MA counties.
+Unknown county is listed separately because Unknown county can have multiple meanings 
+
+### When we graph these results:
+
+```{r, echo = FALSE}
+ggplot(data = ma, aes(x = date, y = delta_cases, color = county))+
+  geom_line()+
+  facet_wrap(~county, nrow = 4)+
+  labs(x = "Date",
+       y = "Delta Cases",
+       title = "New Cases per MA county")
+```
+
+
+## Examples where this declining count happens
+```{r, echo = FALSE}
+ma %>% 
+  filter(lag(delta_cases) > 0 & delta_cases < 0) %>% 
+  kable()
+```
+
+
+## Checking if this error happens in any other dataset
+```{r, echo = FALSE, cache = TRUE, dependson="raw_data"}
+us_2 <- covid_index_us %>% 
+        mutate(delta_cases = 
+                 coalesce(cases - lag(cases), 0)) %>% 
+        mutate(delta_deaths = 
+                 coalesce(deaths - lag(deaths), 0)) %>% 
+        filter(delta_cases < 0 | delta_deaths < 0)
+
+us_2 %>% kable(caption = "From the US dataset")
+
+states_2 <- covid_index_states %>% 
+        group_by(state) %>% 
+        mutate(delta_cases = 
+                 coalesce(cases - lag(order_by = date, cases), 0)) %>% 
+        mutate(delta_deaths = 
+                 coalesce(deaths - lag(order_by = date, deaths), 0)) %>% 
+        filter(delta_cases < 0 | delta_deaths < 0) %>% 
+        select(date, state, delta_cases, delta_deaths)
+
+head(states_2) %>% kable(caption = "From the states dataset")
+```
+
+In the states dataset there are quite a number of instances (only a few are shown here) where either the delta cases or delta deaths have been negative but the us dataset does not contain any negative deltas
+
+### Adjusting the data to exclude any dates with negative deltas
+```{r, echo = FALSE, cache = TRUE, dependson="raw_data"}
+ma2 <- covid_index_counties %>% 
+      filter(state == "Massachusetts" & county != "Unknown") %>% 
+      select(date, county, cases, deaths) %>% 
+      group_by(county) %>% 
+      mutate(delta_cases = 
+           coalesce(cases - lag(order_by = county, cases), 0)) %>% 
+      mutate(delta_deaths = 
+           coalesce(deaths - lag(order_by = county, deaths), 0)) %>% 
+      filter(delta_cases >= 0 & delta_deaths >= 0 & date != "2020-11-26")
+
+ggplot(data = ma2, aes(x = date, y = delta_cases, color = county))+
+  geom_line()+
+  facet_wrap(~county, nrow = 4)+
+  labs(x = "Date",
+       y = "Delta Cases",
+       title = "New Cases per MA county")
+```
+
+*Ignoring negative deltas*
+
+```{r, echo = FALSE}
+summarise(ma, avg_new_cases = mean(delta_cases), avg_new_deaths = mean(delta_deaths)) %>% kable(caption = "With negative deltas")
+summarise(ma2, avg_new_cases = mean(delta_cases), avg_new_deaths = mean(delta_deaths)) %>% kable(caption = "Without negative deltas")
+```
+
+## Other breakdown using the states dataset
+
+```{r, echo = FALSE}
+# ma <- covid_index_states %>% 
+#             filter(state == "Massachusetts") %>%
+#             mutate(delta_cases = coalesce(cases - lag(cases, 1))) %>% 
+#             select(date, cases, deaths, delta_cases)
+
+ma3 <-  ma2 %>% 
+         filter(delta_cases >= 0 & date != "2020-11-26") %>% 
+           mutate(month = month(date, label = TRUE),
+                 wday = wday(date, label = TRUE))
+```
+
+```{r, echo = FALSE}
+ma3 %>%
+  group_by(month) %>% 
+  summarise("new_cases_month" = mean(delta_cases)) %>% 
+  ggplot(aes(x = month, y = new_cases_month))+
+  geom_col(aes(color = month, fill = month))+
+  labs(title = "Average num of new cases per month",
+       y = "Cases")
+
+```
+
+Lowest point in the summer, with a sharp spike towards the winter
+
+# Looking to see any particular trends in days of the week: 
+```{r, r, echo = FALSE, cache = TRUE, dependson="raw_data"}
+ma3 %>%
+  group_by(wday) %>% 
+  summarise("new_cases_wday" = mean(delta_cases)) %>% 
+  ggplot(aes(x = wday, y = new_cases_wday))+
+  geom_col(aes(color = wday, fill = wday))+
+  labs(title = "Average num of new cases per weekday",
+       y = "Cases")
+```
+
+## Comparing the state to the country
+
+```{r, echo = FALSE, cache = TRUE, dependson="raw_data"}
+combined <- ma_totals %>% 
+            left_join(us_totals, by = "date", name = "US", suffix = c("_ma", "_us")) %>% 
+            filter(delta_cases_ma >= 0 & date != "2020-11-26")
+
+plot <- ggplot(data = combined, aes(x = date))+
+  geom_line(aes(y = delta_cases_ma, color = "MA"))+
+  geom_line(aes(y = delta_cases_us, color = "US"))+
+  scale_x_date(NULL, date_breaks = "1 month", date_labels = "%b")+
+  labs(title = "Comparison of new cases per day of MA to US",
+       subtitle = "Based on data from NY Times",
+       y = "Num of cases",
+       caption = "Removed negative deltas and holidays") 
+
+plot+theme(legend.title = element_blank())
+```
+
+## Looking for correlations
+```{r}
+population <-  c(212990, 124994, 565217, 17332, 789034, 70180, 466372, 160830, 1611699, 11399, 706775, 521202, 803907, 830622)
+income <- c(74336, 59230, 69095, 71811, 79263, 60950, 55429, 70876, 102603, 107717, 103291, 89489, 69669, 74679)
+ma_county$population = population
+ma_county$median_income = income
+
+cor_graph <- ggplot(data = ma_county,
+                    aes(x = population, y = cases))+
+                    geom_point()+
+                    geom_smooth(se = FALSE)+
+                    labs(title = "Population vs Cases",
+                         caption = "Information from 2015-2019 Census")
+
+cor_graph2 <- ggplot(data = ma_county,
+                    aes(x = median_income, y = cases))+
+                    geom_point()+
+                    geom_smooth(se = FALSE)+
+                    labs(title = "Median Income vs Cases",
+                         caption = "Information from 2015-2019 Census")
+
+cor_graph
+cor_graph2
+```
+
+Correlation between population and cases but not income and cases
