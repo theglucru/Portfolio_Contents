@@ -33,4 +33,6 @@ plot <- payroll %>%
             theme(axis.text.x = element_text(angle = -90, vjust=0.5),
                   panel.grid.minor = element_blank(),
                   legend.position = "none")
-            
+
+# Misc Notes
+# Look to change the color of geom_line depending on y value (done with geom_points here but not with the geom_line)
