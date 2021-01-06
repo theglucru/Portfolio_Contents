@@ -20,10 +20,10 @@ payroll$OT_hours <- ifelse(payroll$OT_hours < 0, "0", payroll$OT_hours) # Remove
 
 # Base Plot
 plot <- payroll %>% 
-        ggplot(aes(x = week_ending))+
+        ggplot(aes(x = week_ending, y = Hours))+
         geom_ref_line(h = 40, size = 1)+
-        geom_line(aes(y = Hours))+
-        geom_point(aes(y = Hours, color = OT))
+        geom_line()+
+        geom_point(color = OT)
 
 # Graphics
     plot + scale_x_date(breaks = payroll$week_ending, date_labels = "%m/%d")+
