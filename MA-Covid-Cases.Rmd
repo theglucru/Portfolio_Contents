@@ -310,3 +310,30 @@ cor_graph2
 ```
 
 Correlation between population and cases but not income and cases
+
+# Draw map of MA
+ma_current <- ma %>% 
+                filter(date == today)
+ma_current$county = tolower(ma_current$county)
+
+
+ma_map <- map_data("county", "massachusetts") %>% 
+  select(long, lat, group, region, subregion)
+
+macountytotal <- inner_join(ma_current, ma_map, by = c("county" = "subregion"))
+
+ma_plot <- ggplot(data = ma_map, aes(x = long, y = lat, group = group))+
+  geom_polygon(fill = NA, color = "black")+
+  coord_fixed()+
+  theme(
+    axis.text = element_blank(),
+    axis.line = element_blank(),
+    axis.ticks = element_blank(),
+    panel.border = element_blank(),
+    panel.grid = element_blank(),
+    axis.title = element_blank()
+  )
+
+# Fill with cases + color
+ma_plot+geom_polygon(data = macountytotal, aes(fill = cases), color = "white")+
+  scale_fill_distiller(palette = 4)
