@@ -122,10 +122,9 @@ today_index$prop_cases <- round(today_index$prop_cases, 2)
 
 
 ggplot()+
-  geom_map(data = us_map, map = us_map,
-           aes(x= long, y = lat, map_id = region))+
   geom_map(data = today_index, map = us_map,
            aes(fill = prop_cases, map_id = state))+
+   geom_polygon(data = us_map, aes(x = long, y = lat, group = group), color = "black", fill = NA)+
   coord_quickmap()+
   labs(x = "",
        y = "",
@@ -135,7 +134,8 @@ ggplot()+
   theme(panel.grid = element_blank(),
         axis.ticks = element_blank(),
         axis.text = element_blank()
-    )
+    )+
+  scale_fill_distiller(palette = 10, direction = 1)
 ```
 
 ```{r, echo = FALSE, warning = FALSE}
@@ -144,16 +144,16 @@ state_mean_cases$state <- tolower(state_mean_cases$state)
 
 state_mean_cases %>% 
   ggplot()+
-  geom_map(data = us_map, map = us_map,
-           aes(x = long, y = lat, map_id = region))+
-   geom_map(map = us_map,
+    geom_map(map = us_map,
             aes(fill = avg_new_cases, map_id = state))+
+  geom_polygon(data = us_map, aes(x = long, y = lat, group = group), color = "black", fill = NA)+
   coord_quickmap()+
+  scale_fill_distiller(palette = 8, direction = 1)+
   labs(x = "",
        y = "",
-       title = "Average new cases",
+       title = "Average new cases per day",
        subtitle = "Based on data from NYTimes",
-       fill = "Cases")+
+       fill = "Average New Cases per day")+
   theme(panel.grid = element_blank(),
         axis.ticks = element_blank(),
         axis.text = element_blank()
