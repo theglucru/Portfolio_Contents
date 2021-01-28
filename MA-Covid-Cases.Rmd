@@ -327,7 +327,7 @@ macountytotal <- inner_join(ma_current, ma_map, by = c("county" = "subregion"))
 
 ma_plot <- ggplot(data = ma_map, aes(x = long, y = lat, group = group))+
   geom_polygon(fill = NA, color = "black")+
-  coord_fixed()+
+  coord_quickmap()+
   theme(
     axis.text = element_blank(),
     axis.line = element_blank(),
