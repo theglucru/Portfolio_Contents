@@ -236,7 +236,7 @@ summarise(ma2, avg_new_cases = mean(delta_cases), avg_new_deaths = mean(delta_de
 #             select(date, cases, deaths, delta_cases)
 
 ma3 <-  ma2 %>% 
-         filter(delta_cases >= 0 & date != "2020-11-26") %>% 
+         filter(delta_cases >= 0 & date != "2020-11-26" & date != "2020-12-25" & date != "2020-01-01") %>% 
            mutate(month = month(date, label = TRUE),
                  wday = wday(date, label = TRUE))
 ```
@@ -247,8 +247,9 @@ ma3 %>%
   summarise("new_cases_month" = mean(delta_cases)) %>% 
   ggplot(aes(x = month, y = new_cases_month))+
   geom_col(aes(color = month, fill = month))+
-  labs(title = "Average num of new cases per month",
-       y = "Cases")
+  labs(title = "Average num of new cases per month in MA",
+       y = "Cases",
+       caption = "January (2021)")
 
 ```
 
@@ -285,7 +286,7 @@ plot+theme(legend.title = element_blank())
 ```
 
 ## Looking for correlations
-```{r}
+```{r, echo = FALSE, cache = TRUE, dependson="raw_data"}
 population <-  c(212990, 124994, 565217, 17332, 789034, 70180, 466372, 160830, 1611699, 11399, 706775, 521202, 803907, 830622)
 income <- c(74336, 59230, 69095, 71811, 79263, 60950, 55429, 70876, 102603, 107717, 103291, 89489, 69669, 74679)
 ma_county$population = population
@@ -311,10 +312,12 @@ cor_graph2
 
 Correlation between population and cases but not income and cases
 
-# Draw map of MA
+## Map of MA
+```{r, echo = FALSE, cache = TRUE, dependson="raw_data"}
+### Draw map of MA (put this in RMD) ###
 ma_current <- ma %>% 
                 filter(date == today)
-ma_current$county = tolower(ma_current$county)
+ma_current$county <-  tolower(ma_current$county)
 
 
 ma_map <- map_data("county", "massachusetts") %>% 
@@ -335,5 +338,6 @@ ma_plot <- ggplot(data = ma_map, aes(x = long, y = lat, group = group))+
   )
 
 # Fill with cases + color
-ma_plot+geom_polygon(data = macountytotal, aes(fill = cases), color = "white")+
-  scale_fill_distiller(palette = 4)
+ma_plot+geom_polygon(data = macountytotal, aes(fill = cases), color = "black")+
+  scale_fill_distiller(palette = 8, direction = 1)
+```
