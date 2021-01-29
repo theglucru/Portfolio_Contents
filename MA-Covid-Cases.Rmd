@@ -340,4 +340,7 @@ ma_plot <- ggplot(data = ma_map, aes(x = long, y = lat, group = group))+
 # Fill with cases + color
 ma_plot+geom_polygon(data = macountytotal, aes(fill = cases), color = "black")+
   scale_fill_distiller(palette = 8, direction = 1)
+# Annotation layer
+ma_plot2+
+  geom_text(data = county_names, aes(long, lat, label = county), size = 3.5, group = "", hjust = 0.5)
 ```
