@@ -1,1 +1,1 @@
-# Various R projects go here
+# R projects go here
