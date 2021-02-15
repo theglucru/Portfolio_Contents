@@ -65,7 +65,7 @@ Definition of probable:
 
 ```{r ma_index, echo=FALSE, cache = TRUE, dependson = "raw_data"}
 ma <- covid_index_counties %>% 
-        filter(state == "Massachusetts" & county != "Unknown") %>% 
+        filter(state == "Massachusetts" & county != "Unknown" & date <= "2020-12-31") %>% 
           select(date, county, cases, deaths) %>% 
           group_by(county) %>% 
         mutate(delta_cases = 
@@ -210,7 +210,7 @@ ma2 <- covid_index_counties %>%
            coalesce(cases - lag(order_by = county, cases), 0)) %>% 
       mutate(delta_deaths = 
            coalesce(deaths - lag(order_by = county, deaths), 0)) %>% 
-      filter(delta_cases >= 0 & delta_deaths >= 0 & date != "2020-11-26")
+      filter(delta_cases >= 0 & delta_deaths >= 0 & date != "2020-11-26" & date <= "2021-01-31")
 
 ggplot(data = ma2, aes(x = date, y = delta_cases, color = county))+
   geom_line()+
