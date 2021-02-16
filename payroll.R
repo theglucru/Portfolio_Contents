@@ -2,7 +2,7 @@ library(tidyverse)
 library(lubridate)
 library(readxl)
 library(modelr)
-
+ 
 # Reading
 # To create a table for the year
 #   week_beginning <-  seq(from = as.Date("2021-01-03"), to = as.Date("2021-12-31"), by = "1 week")
