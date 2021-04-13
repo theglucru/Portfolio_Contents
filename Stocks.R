@@ -30,7 +30,7 @@ GetFileName <- function(file){
   sp500 <- list.files(path = "./sp500", pattern = ".csv", full.names = T) %>%
     map_df(~GetFileName(.))
 
-#Attempting to import multiple csvs from multiple folders into 1 dataframe
+# Attempting to import multiple csvs from multiple folders into 1 dataframe
   
   printname <- function(filename){
     pathname <- str_c("./", filename)
@@ -42,3 +42,35 @@ GetFileName <- function(file){
     list.files(path = filelist, full.names = T) %>% 
       map(~GetFileName(stocklist))
   }
+  
+  
+# Calculations
+  x <- sp500  # Test variables
+  today <- tail(x$Date, 1) # Get last date in the table
+  x <- x %>% get_2021() # Filters 2021
+  x$Date <- dmy(x$Date) # Converts data type to date
+  
+  x <- x %>% group_by(stock)
+  x <- x %>% 
+        mutate(open_adjclose = `Adjusted Close` - Open)
+  
+# Daily gains/losses
+    
+  winners <- x %>% # Top 10 biggest gains of today
+    filter(open_adjclose > 0 & Date == today |  Date == (today - 7)) %>% 
+    arrange(open_adjclose %>% desc())
+  
+  losers <- x %>% # Top 10 biggest loss of today
+    filter(open_adjclose < 0 & Date == today) %>% 
+    arrange(open_adjclose)
+  
+  # Tracking Weekly gains/loss
+  y <- x %>%  filter(open_adjclose > 0 & Date == today |  Date == (today - 7)) 
+  weekly <- y %>% mutate(week_dif = `Adjusted Close` - lag(Open, order_by = stock))
+  weekly %>% 
+    filter(!is.na(week_dif)) %>% 
+    arrange(week_dif)
+  
+  weekly %>% 
+    filter(!is.na(week_dif)) %>% 
+    arrange(desc(week_dif))
