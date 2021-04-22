@@ -330,8 +330,11 @@ state_mean_cases %>%
 
 ```{r, echo = FALSE}
 # Timeine of cases in US
+avg_delta <- us_totals$delta_cases %>% cummean()
+
 us_cases_plot <- ggplot(data = us_totals, mapping = aes(x = date, y = delta_cases))+
-  geom_line()
+  geom_line(aes(color = "Total"))+
+  geom_line(y = avg_delta, aes(color = "Average"))
 
 us_cases_plot+labs(title = "Number of New Covid Cases in the US",
                    x = "",
