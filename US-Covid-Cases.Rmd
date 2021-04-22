@@ -333,7 +333,7 @@ state_mean_cases %>%
 us_cases_plot <- ggplot(data = us_totals, mapping = aes(x = date, y = delta_cases))+
   geom_line()
 
-us_cases_plot+labs(title = "Number of New Covid Cases in the US 2020",
+us_cases_plot+labs(title = "Number of New Covid Cases in the US",
                    x = "",
                    y = "New Cases")+
               theme(axis.ticks = element_blank(),
