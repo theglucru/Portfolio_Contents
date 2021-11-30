@@ -6,6 +6,6 @@ Data is taken from The NY Times public dataset located at https://github.com/nyt
 
 Ideas: 
 
-  Provide visualization of the datasets available
+*Provide visualization of the datasets available
   
-  Make an R Shiny app to breakdown each individual state
+*Make an R Shiny app to breakdown each individual state
