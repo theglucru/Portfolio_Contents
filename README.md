@@ -8,4 +8,4 @@ Ideas:
 
 - Provide visualization of the datasets available
   
-- Make an R Shiny app to breakdown each individual state
+- Make an R Shiny app to breakdown each individual state. Code will be in the R Shiny Apps repo
