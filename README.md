@@ -1,4 +1,5 @@
 # R projects go here
+# Raw code will be here while turning them into shiny apps
 
 ## US-Covid-Cases
 ### Tracking the progess of COVID-19 in the US and visualizing it using R, and RShiny
