@@ -1,0 +1,197 @@
+---
+title: "Lichess Elite April 2021"
+author: "Gary Lu"
+date: "5/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(bigchess)
+library(knitr)
+```
+
+### Analysis of April 2021 Chess games from the Lichess Elite Database at https://database.nikonoel.fr/
+I don't play much chess but I have gotten an interest in watching games recently so I wanted to grab a small dataset and look at the trends
+
+
+```{r load data, echo=FALSE, include=FALSE}
+
+## Converts pgn to csv to load faster when opening again
+
+#  chess_games_apr_21 <- read.pgn("lichess_elite_2021-04.pgn",
+#                                   add.tags = c("Event", "LichessURL", "Date", "Round", "White", "Black", "WhiteElo", "BlackElo",
+#                                                "ECO", "Opening", "TimeControl", "UTCDate", "UTCTime", "Termination"),
+#                                   n.moves = T,
+#                                   last.move = F,
+#                                   stat.moves = F
+#                                  )
+# 
+# write_csv(chess_games_apr_21, "C:\\Users\\thegl\\Documents\\R\\lichess_elite_apr21.csv")
+
+
+df <- read_csv("lichess_elite_apr21.csv")
+df <- df %>% 
+  filter(complete.movetext == TRUE) %>% 
+  unite(M10, 19:38, sep = " ", remove = FALSE) # Unites the first 10 moves of each side into 1 column but keeps individual move columns
+
+```
+
+```{r}
+# Helper Functions
+
+row_search <- function(df, col, string){
+  df %>% 
+    filter(str_detect(df[[col]], str_c("^", string)))
+}
+```
+
+### What time controls are played the most:
+```{r}
+group_count(df, "TimeControl") %>% 
+  head(10)
+```
+There is a heavy favor towards 3 minute games
+
+### Breakdown of game results
+
+```{r, echo = FALSE}
+# Winrate of games
+results <- c("0-1", "1/2-1/2", "1-0")
+
+game_results <- 
+  df %>% 
+  group_by(Result) %>% 
+  summarise(n = n()) %>% 
+  mutate(percent = round(n / sum(n) * 100, 2), game = "") %>% 
+  arrange(factor(Result, level = results)) %>% 
+  mutate(Result = factor(Result, levels = results))
+
+
+   ggplot(game_results)+
+   geom_col(aes(x = game, y = percent, fill = Result), width = .1)+
+   coord_flip()+
+     labs(x = "",
+          title = "Game Results")+
+     theme_light()
+```
+White has a slightly better winrate than black here
+
+
+### The most popular openings for each side
+
+```{r, echo=FALSE}
+popular_openings <- 
+  df %>% 
+  group_count("W1") %>% 
+  mutate(percent = n / sum(n) * 100) %>%
+  head(10)
+
+ggplot(data = popular_openings)+
+  geom_col(aes(x = reorder(W1, percent), y = percent, fill = W1))+
+  coord_flip()+
+  labs(title = "Most popular openings for white")
+
+```
+
+The ten most popular openings for white. e4 and d4 follow the concept of putting pieces in the center
+
+```{r, echo = FALSE}
+df %>% 
+  filter(W1 %in% popular_openings$W1) %>% 
+  group_by(W1, Result) %>% 
+  summarise(n = n()) %>% 
+  mutate(Result = factor(Result, levels = results)) %>% 
+  arrange(factor(Result, level = results)) %>%
+  ggplot()+
+  geom_col(aes(x = reorder(W1, n), y = n, fill = Result), position = "fill")+
+  coord_flip()+
+  labs(x = "",
+       y = "percent",
+       title = "Winrate of popular openings")
+```
+
+e4 being the most popular 1st move does not have the highest win rate for white
+```{r}
+df %>% 
+  filter(W1 %in% popular_openings$W1) %>% 
+  group_by(W1) %>% 
+  summarise(avgNMoves = mean(NMoves))
+```
+
+No matter which of the popular openings is played, games last roughly the same number of moves
+
+### Getting into specific opening varitions:
+
+```{r, warning = FALSE}
+dfm1 <- 
+  df %>% 
+  unite(M1, W1, B1, sep = " ")
+
+
+popularm1 <-   
+  dfm1 %>% 
+  group_count(c("M1")) %>% 
+  head(10)
+   
+  ggplot(popularm1)+
+  geom_col(aes(x = reorder(M1, n), y = n, fill = M1))+
+  coord_flip()+
+  labs(x = "First moves",
+       y = "",
+       title = "Most popular opening moves")
+```
+
+
+When playing as black, people avoid playing symmetrical openings (although they are the 2nd most popular choice)
+ 
+### Let's look at the most popular continuations to each opening
+
+```{r}
+top5 <- function(move1){
+  dfm1 %>% 
+    filter(M1 == move1) %>% 
+    group_by(M1, Opening) %>% 
+    summarise(n = n()) %>% 
+    arrange(desc(n)) %>% 
+    head(5)
+}
+
+map(popularm1$M1, top5)
+```
+
+The top 5 continuations for each opening. Now that we know names of popular openings we can look into each individual one
+
+```{r}
+
+ruylopez <- row_search(df, "Opening", "Ruy Lopez")
+
+ruylopez %>% group_count("Result") %>% 
+             mutate(percent = n / sum(n) * 100)
+
+sicilian <- row_search(df, "Opening", "Sicilian") 
+
+sicilian %>% group_count("Result") %>% 
+              mutate(percent = n / sum(n) * 100)
+
+```
+
+Results of the Ruy Lopez, one the first openings I learned of although much less popular compared to the Sicilian Defense. The use of the helper functions helps to narrow down what kind of games I want to look at
+
+The moves for the Ruy Lopez are e4 e5 Nf3 Nc6 Bg5 so we start with blacks 3rd move
+```{r}
+rlresults <- group_count(ruylopez, c("B3", "Result")) %>% 
+              arrange(desc(n))
+
+rlresults$B3 <- factor(rlresults$B3)
+rlresults$Result <- factor(rlresults$Result, levels = c("0-1", "1/2-1/2", "1-0"))
+
+ggplot(rlresults %>% head(30))+
+  geom_col(aes(x = fct_reorder(B3, n), y = n, fill = Result))+
+  coord_flip()
+  
+```
+
+For the most part, Ruy Lopez games tend to go the same way for the first 5 moves
