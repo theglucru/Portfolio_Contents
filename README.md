@@ -1,19 +1,11 @@
-# R projects go here
+# Portfolio Contents
 
-## US-Covid-Cases
-### Tracking the progess of COVID-19 in the US and visualizing it using R, and RShiny
-Data is taken from [The NY Times public dataset](https://github.com/nytimes/covid-19-data)
+## [ShinyApps](https://github.com/theglucru/ShinyApps/tree/main/Covid_Cases)
+- Datasets that I am able to find online are turned into Web Apps for visualization
 
-##### Background:
+## [TidyTuesdays](https://github.com/theglucru/TidyTuesdays)
 
-- As a healthcare professional, I naturally found myself naturally tracking the COVID-19 cases in the US. Working in a public setting, I try to keep myself educated on the this topic and track how well the country is doing
-
-##### Ideas: 
-
-- Provide visualization of the datasets available
-  
-- Make an R Shiny app to breakdown each individual state. Code will be in the R Shiny Apps repo
-
+This will have any data analysis I can find using datasets from the R for Data Science Repositry
 
 ## Lichess Elite Database games
 ### An analysis of the chess games from the [Lichess Elite Database](https://github.com/nytimes/covid-19-data)
@@ -24,10 +16,6 @@ Data is taken from [The NY Times public dataset](https://github.com/nytimes/covi
 
 > I published the Lichess Elite Database from 2013 until May 2020 as a torrent which you can get below (known issue: tournament games from lichess are not included):
 
-##### Background:
+Chess Online has surged in popularity during the pandemic. While I was at home, I stumbled upon a YouTube video of people watching chess and making it look entertaining. While I do not play the game at all, I find it very fascinating looking at other people's analysis of games by some of the highest rated players
 
-- Chess Online has surged in popularity during the pandemic. While I was at home, I stumbled upon a YouTube video of people watching chess and making it look entertaining. While I do not play the game at all, I find it very fascinating looking at other people's analysis of games by some of the highest rated players
-
-##### Ideas: 
-
-- Look at what is being played on lichess.org between the higher rated online players. (Time controls, openings and responses, win rates)
+Data presentation will be in this folder in pdf format
