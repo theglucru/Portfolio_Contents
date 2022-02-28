@@ -1,6 +1,6 @@
 # Portfolio Contents
 
-## [ShinyApps](https://github.com/theglucru/ShinyApps/tree/main/Covid_Cases)
+## [ShinyApps](https://github.com/theglucru/ShinyApps)
 - Datasets that I am able to find online are turned into Web Apps for visualization
 
 ## [TidyTuesdays](https://github.com/theglucru/TidyTuesdays)
