@@ -5,7 +5,7 @@
 
 ## [TidyTuesdays](https://github.com/theglucru/TidyTuesdays)
 
-This will have any data analysis I can find using datasets from the R for Data Science Repositry
+- This will have any data analysis I can find using datasets from the R for Data Science Repositry
 
 ## Lichess Elite Database games
 ### An analysis of the chess games from the [Lichess Elite Database](https://github.com/nytimes/covid-19-data)
