@@ -1,0 +1,42 @@
+---
+title: "Poeninja Currency Archnemesis League"
+author: "Gary Lu"
+date: "2/28/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = TRUE)
+library(tidyverse)
+library(rvest)
+```
+
+
+```{r}
+url <- "https://lichess.org/player"
+page <- read_html(url)
+
+gametypehtml <- page %>% html_nodes("#powerTip , .user-top:nth-child(5) .text a , .user-top:nth-child(4) .text a , .user-top:nth-child(3) .text a , .user-top:nth-child(2) .text a , .user-top:nth-child(1) .text a")
+gametype <- html_text(gametypehtml)
+
+# Regex to split name and rating
+elosplit <- "(^.{1,})(\\d{4}$)"
+
+bulletplayershtml <- page %>% html_nodes(".user-top:nth-child(1) li")
+bulletplayers <- html_text(bulletplayershtml)
+
+blitzplayershtml <- page %>% html_nodes(".user-top:nth-child(2) li")
+blitzplayers <- html_text(blitzplayershtml)
+
+rapidplayershtml <- page %>% html_nodes(".user-top:nth-child(3) li")
+rapidplayers <- html_text(rapidplayershtml)
+
+classicalplayershtml <- page %>% html_nodes(".user-top:nth-child(4) li")
+classicalplayers <- html_text(classicalplayershtml)
+
+ultrabulletplayershtml <- page %>% html_nodes(".user-top:nth-child(5) li")
+ultrabulletplayers <- html_text(ultrabulletplayershtml)
+
+bulletplayers <- tibble(name = bulletplayers, format = "bullet")
+bulletplayers <- bulletplayers %>% extract(name, into = c("name", "rating"), regex = elosplit)
+```
