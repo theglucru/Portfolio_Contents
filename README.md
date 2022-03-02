@@ -19,3 +19,8 @@
 Chess Online has surged in popularity during the pandemic. While I was at home, I stumbled upon a YouTube video of people watching chess and making it look entertaining. While I do not play the game at all, I find it very fascinating looking at other people's analysis of games by some of the highest rated players
 
 Data presentation will be in this folder in pdf format
+
+## Lichess Leaderboards webscraping
+
+- Practice using webscraping techniques 
+- I chose the lichess leaderboards to see online rating updates of the most popular chess formats
