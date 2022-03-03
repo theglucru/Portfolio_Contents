@@ -20,7 +20,7 @@ Chess Online has surged in popularity during the pandemic. While I was at home, 
 
 Data presentation will be in this folder in pdf format
 
-## Lichess Leaderboards webscraping
+## [Lichess Leaderboards webscraping](https://htmlpreview.github.io/?https://github.com/theglucru/Portfolio_Contents/blob/main/LichessLeaderboards.html)
 
 - Practice using webscraping techniques 
 - I chose the lichess leaderboards to see online rating updates of the most popular chess formats
