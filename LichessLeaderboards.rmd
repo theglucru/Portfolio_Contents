@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, fig.width = 12, fig.height = 6)
 library(tidyverse)
 library(rvest)
 library(knitr)
@@ -46,19 +46,36 @@ ultrabulletplayers <- html_text(ultrabulletplayershtml)
 # Cleaning Script
 
 cleaning <- function(df, formatname){
-  tibble(format = formatname, name = df) %>% extract(name, into = c("name", "rating"), regex = elosplit)
+  tibble(format = formatname, name = df) %>% extract(name, into = c("name", "rating"), regex = elosplit) %>% 
+    mutate(rank = row_number())
 }
 
 bullet <- cleaning(bulletplayers, "Bullet")
 blitz <- cleaning(blitzplayers, "Blitz")
 classical <- cleaning(classicalplayers, "Classical")
 ultrabullet <- cleaning(ultrabulletplayers, "UltraBullet")
-table <- bind_rows(bullet, blitz, classical, ultrabullet)
+table <- bind_rows(bullet, blitz, classical, ultrabullet) %>% group_by(format)
 ```
 
 Finished table
 
 ```{r}
-table %>% kable()
+table
 ```
+
+Visual Graphs
+
+```{r}
+plot <- ggplot(data = table, aes(x = rank, y = rating, group = format, color = format))+
+  geom_label(aes(label = name, x = rank, y = rating))+
+  labs(title = "Lichess Leaderboards",
+       x = "")
+
+plot+
+  theme(axis.title.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.line.x.bottom = element_line(size = .5))
+```
+
 
