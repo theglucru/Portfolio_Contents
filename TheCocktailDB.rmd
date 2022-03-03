@@ -1,0 +1,49 @@
+---
+title: "TheCocktailDB"
+author: "Gary Lu"
+date: "3/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(httr)
+library(jsonlite)
+library(knitr)
+```
+
+
+
+```{r}
+res = GET("www.thecocktaildb.com/api/json/v1/1/random.php")
+
+data = fromJSON(rawToChar(res$content))
+
+table <- data$drinks
+colnames(table) <- colnames(table) %>% str_remove("^str")
+
+# Make all columns the same data type
+table[18:47] <- as.character(table[18:47])
+
+
+```
+
+```{r, echo = TRUE}
+# Combining ingredients and measurements to 1 column (There's probably a better way to do this but this is the solution I found for now)
+ingredients <- tibble(table %>% select(starts_with("Ing"))) %>% pivot_longer(names_to = "number", values_to = "ingredient", cols = everything())
+ingredients$ingredient <- ingredients$ingredient %>% str_remove_all("^NA")
+
+measurements <- tibble(table %>% select(starts_with("Meas"))) %>% pivot_longer(names_to = "number", values_to = "measurement", cols = everything())
+measurements$measurement <- measurements$measurement %>% str_remove_all("^NA")
+
+list <- bind_cols(number = ingredients$number, ingredient = ingredients$ingredient, measurement = measurements$measurement)
+inglist <- list %>% unite(col = ingredient, ingredient, measurement, sep = " ") %>% 
+  pivot_wider(names_from = number, values_from = ingredient)
+
+# Joining again on original table
+
+newtable <- table %>% select(-starts_with("Ing") & -starts_with("Measu")) %>% bind_cols(inglist)
+
+newtable %>% kable()
+```
