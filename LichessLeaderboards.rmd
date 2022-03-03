@@ -59,6 +59,6 @@ table <- bind_rows(bullet, blitz, classical, ultrabullet)
 Finished table
 
 ```{r}
-table
+table %>% kable()
 ```
 
