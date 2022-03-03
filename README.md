@@ -24,3 +24,4 @@ Data presentation will be in this folder in pdf format
 
 - Practice using webscraping techniques 
 - I chose the lichess leaderboards to see online rating updates of the most popular chess formats
+- Data is updated as the leaderboards change on [Lichess](lichess.org/player)
