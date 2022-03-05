@@ -25,3 +25,9 @@ Data presentation will be in this folder in pdf format
 - Practice using webscraping techniques 
 - I chose the lichess leaderboards to see online rating updates of the most popular chess formats
 - Data is updated as the leaderboards change on [Lichess](lichess.org/player)
+
+## [TheCocktailDB API Cleaning](https://htmlpreview.github.io/?https://github.com/theglucru/Portfolio_Contents/blob/main/LichessLeaderboards.html)
+
+- Grabbing and cleaning data from an API found at [TheCockTailDB](https://www.thecocktaildb.com/api.php)
+- Looks up a randomly generated cocktail and gives the breakdown of ingredients, instructions, pictures
+- Cleaning up the data to have as least columns as possible
