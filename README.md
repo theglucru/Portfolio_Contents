@@ -31,3 +31,8 @@ Data presentation will be in this folder in pdf format
 - Grabbing and cleaning data from an API found at [TheCockTailDB](https://www.thecocktaildb.com/api.php)
 - Looks up a randomly generated cocktail and gives the breakdown of ingredients, instructions, pictures
 - Cleaning up the data to have as least columns as possible
+
+## [NBA League Leaders](https://htmlpreview.github.io/?https://github.com/theglucru/Portfolio_Contents/blob/main/NBALeagueLeaders.html)
+- Using NBA api data to predict the All-NBA teams for the 2021-22 NBA Season
+- Roster information was also taken from [Basketball Reference](https://www.basketball-reference.com/players/)
+- Orders players by their position and EFF stat in order to predict who would make All-NBA teams
