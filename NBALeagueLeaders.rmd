@@ -1,0 +1,87 @@
+---
+title: "NBA Stats"
+author: "Gary Lu"
+date: "3/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=FALSE, fig.width=20}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(httr)
+library(jsonlite)
+library(rvest)
+```
+
+
+```{r get data}
+res <-  GET("https://stats.nba.com/stats/leagueleaders",
+          query = list(LeagueID = "00",
+                       PerMode = "PerGame",
+                       StatCategory = "EFF",
+                       Season = "2021-22",
+                       SeasonType = "Regular Season",
+                       Scope = "RS"))
+
+rawdata <-  fromJSON(rawToChar(res$content))
+
+data <- rawdata$resultSet
+
+df <- as_tibble(data$rowSet)
+colnames(df) <- data$headers
+```
+
+```{r}
+roster <- read_csv("C:\\Users\\thegl\\Documents\\R\\NBA202122Rostercsv.csv")
+roster <- roster %>% select(-Rk, -G) # Removes Rk and G column
+roster$Player <- str_remove_all(roster$Player, "\\\\.{1,}")
+
+joined <- df %>% left_join(roster, by = c("PLAYER" = "Player"))
+
+
+# A lot of manual fixing
+
+fixnames <- joined %>% filter(!complete.cases(joined))
+posfix <- c("C", "PG", "C", "C", "C", "C", "PF", "SG", "SG-PG", "C")
+fixnames$Pos <- posfix
+joined <- bind_rows(fixnames, joined) %>% filter(!is.na(.$Pos))
+joined$EFF <- as.numeric(joined$EFF)
+joined <- joined %>% arrange(desc(EFF))
+```
+
+
+```{r}
+row_search <- function(df, col, string){
+  df %>% 
+    filter(str_detect(df[[col]], str_c("^", string)))
+}
+
+guards <- row_search(joined, "Pos", "PG") %>% bind_rows(row_search(joined, "Pos", "SG"))
+forwards <- row_search(joined, "Pos", "SF") %>% bind_rows(row_search(joined, "Pos", "PF"))
+centers <- row_search(joined, "Pos", "C") 
+```
+
+Going off the [https://en.wikipedia.org/wiki/All-NBA_Team](Wikipedia on All-NBA Team Selection), 2 guards, 2 forwards and 1 center are picked
+Since there are normally 3 teams, I will generate 3 teams solely based on their __EFF RATING__
+
+***
+
+```{r}
+allnbafirst <- bind_rows(guards[1,], guards[2,], forwards[1,], forwards[2,], centers[1,]) %>% mutate(allnba = "First")
+
+allnbasecond <- bind_rows(guards[3,], guards[4,], forwards[3,], forwards[4,], centers[2,]) %>% mutate(allnba = "Second")
+
+allnbathird <- bind_rows(guards[5,], guards[6,], forwards[5,], forwards[6,], centers[3,]) %>% mutate(allnba = "Third")
+
+allnbapreds <- bind_rows(allnbafirst, allnbasecond, allnbathird)
+
+ggplot()+
+  geom_label(data = allnbapreds, aes(x = Pos, y = EFF, fill = PLAYER, label = PLAYER), position = position_dodge(width = 1))+
+  facet_wrap(~allnba)+
+  labs(title = "All-NBA Team Predictions",
+       x = "Player Position")
+```
+
+
+
+
