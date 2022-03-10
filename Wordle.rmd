@@ -1,0 +1,251 @@
+---
+title: "Analysis of the Wordle word list"
+author: "Gary Lu"
+date: "3/14/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+```
+
+### This may contain **SPOILERS** for Wordle.
+
+#### The wordlist was extracted from the developer tools in a web browser, however it also contains **_SPOILERS_** for future days so I had to be careful when looking at this
+
+#### _This information is not meant to be taken seriously as you should be playing Wordle the way you want to._
+
+I will take a look a common letters, as well as letter patterns 
+
+```{r, echo = FALSE, message = FALSE}
+wordlist <- read_delim("wordlist.txt", delim = ",")
+
+wordlist <- tibble("word" = colnames(wordlist))
+wordlist$word <- toupper(wordlist$word)
+
+wordlist <- wordlist %>% mutate(L1 = str_sub(wordlist[[1]], 1, 1),
+                    L2 = str_sub(wordlist[[1]], 2, 2),
+                    L3 = str_sub(wordlist[[1]], 3, 3),
+                    L4 = str_sub(wordlist[[1]], 4, 4),
+                    L5 = str_sub(wordlist[[1]], 5, 5),
+                    F3 = str_sub(wordlist[[1]], 1, 3),
+                    M3 = str_sub(wordlist[[1]], 2, 4),
+                    E3 = str_sub(wordlist[[1]], 3, 5))
+```
+
+
+```{r, echo=FALSE}
+commonletters <- wordlist %>%
+  select(contains("L")) %>% 
+  pivot_longer(everything(), names_to = "pos", values_to = "letter") %>% 
+  group_by(pos) %>% 
+  count(letter) %>% 
+  arrange(desc(n), .by_group = TRUE) %>% 
+  slice_head(n = 5) %>% 
+  ggplot(aes(x = fct_reorder(letter, -n), y = n, fill = pos))+
+  geom_col(position = position_dodge())+
+  labs(title = "Most common letters and their position",
+       y = "",
+       x = "Letter")
+
+commonf3 <- wordlist %>% 
+  select(contains("F3")) %>% 
+  count(F3) %>% 
+  arrange(desc(n)) %>% 
+  head(10) %>% 
+  ggplot(aes(x = fct_reorder(F3, -n), y = n, fill = F3))+
+  geom_col()+
+  theme(legend.position = "")+
+  labs(title = "Most common first 3 letters",
+       x = "",
+       y = "")
+
+commonm3 <- wordlist %>% 
+  select(contains("M3")) %>% 
+  count(M3) %>% 
+  arrange(desc(n)) %>% 
+  head(10) %>% 
+  ggplot(aes(x = fct_reorder(M3, -n), y = n, fill = M3))+
+  geom_col()+
+  theme(legend.position = "")+
+  labs(title = "Most common middle 3 letters",
+       x = "",
+       y = "")
+
+commone3 <- wordlist %>% 
+  select(contains("E3")) %>% 
+  count(E3) %>% 
+  arrange(desc(n)) %>% 
+  head(10) %>% 
+  ggplot(aes(x = fct_reorder(E3, -n), y = n, fill = E3))+
+  geom_col()+
+  theme(legend.position = "")+
+  labs(title = "Most common last 3 letters",
+       x = "",
+       y = "")
+
+commonletters
+```
+- S is the most common 5th letter probably because plural words
+- A E and I are popular in at least 3 different positions
+- I expected T and N to be more popular as anyone that has seen Wheel of Fortune knows how they are used
+
+If were were to remove S from the 5th letter:
+
+```{r}
+wordlist2 <- wordlist %>% filter(L5 != "S")
+
+nos_letters <- wordlist2 %>%
+  select(contains("L")) %>% 
+  pivot_longer(everything(), names_to = "pos", values_to = "letter") %>% 
+  group_by(pos) %>% 
+  count(letter) %>% 
+  arrange(desc(n), .by_group = TRUE) %>% 
+  slice_head(n = 5) %>% 
+  ggplot(aes(x = fct_reorder(letter, -n), y = n, fill = pos))+
+  geom_col(position = position_dodge())+
+  labs(title = "Most common letters and their position",
+       subtitle = "S removed from 5th letter",
+       y = "",
+       x = "Letter")
+
+nos_f3 <- wordlist2 %>% 
+  select(contains("F3")) %>% 
+  count(F3) %>% 
+  arrange(desc(n)) %>% 
+  head(10) %>% 
+  ggplot(aes(x = fct_reorder(F3, -n), y = n, fill = F3))+
+  geom_col()+
+  theme(legend.position = "")+
+  labs(title = "Most common first 3 letters",
+       subtitle = "S removed from 5th letter",
+       x = "",
+       y = "")
+
+nos_m3 <- wordlist2 %>% 
+  select(contains("M3")) %>% 
+  count(M3) %>% 
+  arrange(desc(n)) %>% 
+  head(10) %>% 
+  ggplot(aes(x = fct_reorder(M3, -n), y = n, fill = M3))+
+  geom_col()+
+  theme(legend.position = "")+
+  labs(title = "Most common middle 3 letters",
+       subtitle = "S removed from 5th letter",
+       x = "",
+       y = "")
+
+nos_e3 <- wordlist2 %>% 
+  select(contains("E3")) %>% 
+  count(E3) %>% 
+  arrange(desc(n)) %>% 
+  head(10) %>% 
+  ggplot(aes(x = fct_reorder(E3, -n), y = n, fill = E3))+
+  geom_col()+
+  theme(legend.position = "")+
+  labs(title = "Most common last 3 letters",
+       subtitle = "S removed from 5th letter",
+       x = "",
+       y = "")
+
+
+```
+
+Side by side comparisons
+
+```{r}
+commonletters
+nos_letters
+```
+
+```{r}
+commonf3
+nos_f3
+```
+
+```{r}
+commonm3
+nos_m3
+```
+
+```{r}
+commone3
+nos_e3
+```
+
+Some points of my wordle strategy:
+
+- Start with the same word every time
+- Use 5 different letters
+- If any letters match, I use them in the next guess
+- Do not aim to get the word on the first guess
+
+Takeaway points so far:
+
+- S is the most common first and last letter 
+- ED is the most common ending if you remove S from the 5th letter
+- A can be found in the middle 3 letters all the time
+
+If I were to follow the above, then words like SARED, SATED, SAWED, SAPED, SAKER, SANNY, SAPPY would all be potential first guesses.
+However, these words will only be the correct *once* over the span of many years. So if I dont have any matches in my first guess, I should have a second one ready that covers the most common letters
+
+Let's say we started with SATED, and ended up getting no matches
+
+```{r}
+nosated <- wordlist
+nosated$word <- wordlist$word %>% str_remove_all("[SATED]{1,}") 
+
+nosated <- nosated %>% 
+  filter(str_detect(nosated$word, "^.{5}"))
+
+letterplot <- function(worddf, columns){
+  worddf %>% 
+  select(contains(columns)) %>% 
+    pivot_longer(everything(), names_to = "pos", values_to = "letter") %>% 
+    group_by(pos) %>% 
+    count(letter) %>% 
+    arrange(desc(n), .by_group = TRUE) %>% 
+    slice_head(n = 5) %>% 
+    ggplot(aes(x = fct_reorder(letter, -n), y = n, fill = pos))+
+    geom_col(position = position_dodge())
+}
+
+letterplot(nosated, "L")+
+  labs(x = "Letter",
+       y = "",
+       title = "Most common letter positions",
+       subtitle = "After A E D T S")
+```
+
+The letters O I N R L all appear multiple times, unfortunately there isn't a word on the list that I can make with these letters
+
+Going back, our first word was SATED which leaves our ideal opening words to contain:
+
+- AEIO for vowels
+- NRLTDS for consonants
+
+With some guess, check and revise, there are probably many 2 word combinations from these 10 letters.
+Now let's say after using those 10 letters you still didnt have any matches
+
+```{r}
+uncommons <- wordlist
+
+uncommons$word <- uncommons$word %>% 
+  str_remove_all("[AEIONRLTDS]")
+
+uncommons <- uncommons %>% filter(str_detect(uncommons$word, "^.{5}"))
+
+uncommons %>% select(word)
+```
+
+This leaves only 35 possible words. So it's safe to say that the letters AEIONRLTDS covers a vast majority of English words so your first guess in Wordle should include these
+
+*For the Scrabble players: These letters are all worth 1 point in Scrabble*
+
+Concluding notes:
+
+- This doesn't mean that you should always start off with things like ADORE and LINTS for your first 2 guesses. 
+- The only thing I can guarantee is that it's a high probability that the word has at least *one* of these 10 letters
+- An example would be the word I used at the time of writing this (3/23/22) which is PURGE. Only 2 of the top 10 letters are used 
+
